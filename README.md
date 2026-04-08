@@ -1,20 +1,20 @@
-# Lesson 5 - Terraform AWS Infrastructure
+# Lesson 7 - Terraform AWS Infrastructure + EKS + Helm
 
 ## Опис
-Цей проєкт створює AWS-інфраструктуру за допомогою Terraform:
+Проєкт створює AWS-інфраструктуру та Kubernetes середовище для Django-застосунку:
 
-- S3 bucket для збереження Terraform state
+- S3 bucket для Terraform state
 - DynamoDB table для state locking
-- VPC з 3 публічними та 3 приватними підмережами
+- VPC з 3 public та 3 private subnets
 - Internet Gateway та NAT Gateway
-- Route Tables для маршрутизації
-- ECR repository для Docker-образів
-- автоматичне сканування образів при push
+- ECR repository для Docker-образу
+- EKS cluster у тій самій VPC
+- Helm chart для Django-застосунку
 
 ## Структура проєкту
 
 ```text
-lesson-5/
+lesson-7/
 ├── main.tf
 ├── backend.tf
 ├── outputs.tf
@@ -33,70 +33,31 @@ lesson-5/
 │   │   ├── routes.tf
 │   │   ├── variables.tf
 │   │   └── outputs.tf
-│   └── ecr/
-│       ├── ecr.tf
-│       ├── variables.tf
-│       └── outputs.tf
-└── README.md
+│   ├── ecr/
+│   │   ├── ecr.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── eks/
+│   │   ├── eks.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+├── charts/
+│   └── django-app/
+│       ├── templates/
+│       │   ├── deployment.yaml
+│       │   ├── service.yaml
+│       │   ├── configmap.yaml
+│       │   └── hpa.yaml
+│       ├── Chart.yaml
+│       └── values.yaml
 ```
 
-## Опис модулів
-
-### s3-backend
-Створює:
-- S3 bucket для Terraform state
-- Versioning для bucket
-- шифрування bucket
-- DynamoDB table для блокування state
-
-### vpc
-Створює:
-- VPC
-- 3 public subnets
-- 3 private subnets
-- Internet Gateway
-- NAT Gateway
-- Route Tables та associations
-
-### ecr
-Створює:
-- ECR repository
-- image scanning on push
-- lifecycle policy
-- repository policy
-- output з URL репозиторію
-
-## Команди для запуску
+## Команди
 
 ```bash
 terraform init
 terraform plan
 terraform apply
-terraform destroy
+aws eks update-kubeconfig --region us-west-2 --name lesson-7-eks
+helm upgrade --install django-app ./charts/django-app
 ```
-
-## Важливий нюанс по backend
-
-Terraform backend у S3 не можна використати до того, як S3 bucket і DynamoDB table вже створені.
-
-Порядок такий:
-
-1. Тимчасово закоментувати `backend.tf`
-2. Виконати:
-   ```bash
-   terraform init
-   terraform apply
-   ```
-3. Після створення bucket і table повернути `backend.tf`
-4. Виконати:
-   ```bash
-   terraform init -reconfigure
-   ```
-
-## Outputs
-- S3 bucket name
-- DynamoDB table name
-- VPC ID
-- Public subnet IDs
-- Private subnet IDs
-- ECR repository URL

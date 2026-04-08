@@ -10,6 +10,6 @@ resource "aws_dynamodb_table" "terraform_locks" {
 
   tags = {
     Name        = var.table_name
-    Environment = "lesson-5"
+    Environment = "lesson-7"
   }
 }

@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "terraform_state" {
 
   tags = {
     Name        = var.bucket_name
-    Environment = "lesson-5"
+    Environment = "lesson-7"
   }
 }
 

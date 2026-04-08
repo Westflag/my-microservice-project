@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: "<aws_account_id>.dkr.ecr.us-west-2.amazonaws.com/django-app-ecr"
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+config:
+  DJANGO_DEBUG: "False"
+  DJANGO_SECRET_KEY: "change-me"
+  DJANGO_ALLOWED_HOSTS: "*"
+  DB_HOST: "postgres.example.local"
+  DB_PORT: "5432"
+  DB_NAME: "django_db"
+  DB_USER: "django_user"
+  DB_PASSWORD: "django_password"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
