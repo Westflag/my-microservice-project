@@ -1,14 +1,3 @@
-output "cluster_name" {
-  description = "EKS cluster name"
-  value       = aws_eks_cluster.this.name
-}
-
-output "cluster_endpoint" {
-  description = "EKS cluster endpoint"
-  value       = aws_eks_cluster.this.endpoint
-}
-
-output "node_group_name" {
-  description = "Managed node group name"
-  value       = aws_eks_node_group.this.node_group_name
-}
+output "cluster_name" { value = aws_eks_cluster.this.name }
+output "cluster_endpoint" { value = aws_eks_cluster.this.endpoint }
+output "cluster_ca_certificate" { value = aws_eks_cluster.this.certificate_authority[0].data }

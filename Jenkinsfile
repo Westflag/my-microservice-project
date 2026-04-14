@@ -1,0 +1,1 @@
+pipeline { agent none stages { stage("Build and Push Image") { steps { echo "Build Docker image with Kaniko and push to ECR" } } stage("Update Helm Values") { steps { echo "Update values.yaml in GitOps repo and push to main" } } } }

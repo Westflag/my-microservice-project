@@ -1,0 +1,1 @@
+server:\n  service:\n    type: LoadBalancer\n

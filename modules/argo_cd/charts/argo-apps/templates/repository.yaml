@@ -1,0 +1,1 @@
+{{- range .Values.repositories }}\napiVersion: v1\nkind: Secret\nmetadata:\n  name: repo-{{ .url | sha256sum | trunc 8 }}\n  namespace: argocd\n  labels:\n    argocd.argoproj.io/secret-type: repository\nstringData:\n  type: git\n  url: {{ .url | quote }}\n---\n{{- end }}\n
