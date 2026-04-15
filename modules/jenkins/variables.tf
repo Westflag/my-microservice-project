@@ -1,9 +1,41 @@
-variable "cluster_name" { type = string }
-variable "cluster_endpoint" { type = string }
-variable "cluster_ca_certificate" { type = string }
-variable "region" { type = string }
-variable "jenkins_admin_password" { type = string sensitive = true }
-variable "ecr_repository_url" { type = string }
-variable "gitops_repo_url" { type = string }
-variable "gitops_repo_branch" { type = string }
-variable "gitops_chart_path" { type = string }
+variable "cluster_name" {
+  type = string
+}
+
+variable "cluster_endpoint" {
+  type = string
+}
+
+variable "cluster_ca_certificate" {
+  type = string
+}
+
+variable "region" {
+  type = string
+}
+
+variable "jenkins_admin_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "ecr_repository_url" {
+  type = string
+}
+
+variable "gitops_repo_url" {
+  type = string
+}
+
+variable "gitops_repo_branch" {
+  type = string
+}
+
+variable "gitops_chart_path" {
+  type = string
+}
+
+variable "namespace" {
+  type    = string
+  default = "jenkins"
+}
