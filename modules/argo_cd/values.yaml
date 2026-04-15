@@ -1,1 +1,6 @@
-server:\n  service:\n    type: LoadBalancer\n
+server:
+  service:
+    type: LoadBalancer
+configs:
+  params:
+    server.insecure: true

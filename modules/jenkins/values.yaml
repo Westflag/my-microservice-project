@@ -1,1 +1,30 @@
-controller:\n  serviceType: LoadBalancer\n
+controller:
+  serviceType: LoadBalancer
+  admin:
+    username: admin
+    password: ChangeMe123!
+  installPlugins:
+    - kubernetes:4306.vc91e951ea_eb_d
+    - workflow-aggregator:600.vb_57cdd26fdd7
+    - git:5.2.1
+    - github:1.39.0
+    - configuration-as-code:1810.v9b_c30a_249a_4c
+    - credentials-binding:681.vf91669a_32e45
+  JCasC:
+    defaultConfig: true
+  additionalExistingSecrets: []
+agent:
+  enabled: true
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+persistence:
+  enabled: true
+  size: 10Gi
+serviceAccount:
+  create: true
+  name: jenkins
