@@ -1,119 +1,191 @@
-# Project - Terraform Infrastructure with Universal RDS Module
+# Final DevOps Project — AWS + Terraform + EKS + Jenkins + Argo CD + Monitoring
 
 ## Опис
-Цей проєкт містить AWS/Kubernetes інфраструктурні модулі та універсальний модуль `rds`, який може створювати:
+Цей проєкт реалізує повний DevOps/GitOps цикл для Django-застосунку в AWS з використанням:
+- **Terraform** — інфраструктура як код
+- **AWS** — VPC, EKS, RDS, ECR, S3, DynamoDB
+- **Jenkins** — CI pipeline
+- **Helm** — встановлення Jenkins, Argo CD, Prometheus, Grafana та деплой застосунку
+- **Argo CD** — GitOps синхронізація Helm chart з Git
+- **Prometheus + Grafana** — моніторинг кластера та застосунку
 
-- звичайну RDS instance (`use_aurora = false`)
-- або Aurora cluster + writer (`use_aurora = true`)
+## Компоненти інфраструктури
+- **VPC** з public/private subnets, routing та security groups
+- **EKS** кластер з managed node group та IAM ролями
+- **RDS** модуль зі звичайною RDS або Aurora
+- **ECR** для зберігання Docker-образів
+- **Jenkins** в Kubernetes через Helm
+- **Argo CD** в Kubernetes через Helm
+- **Monitoring** через `kube-prometheus-stack` (Prometheus + Grafana + Alertmanager)
+- **Django app** + Helm chart для Kubernetes деплою
 
-## Структура
+## Структура проєкту
 ```text
 Project/
 ├── main.tf
 ├── backend.tf
 ├── outputs.tf
+├── provider.tf
+├── variables.tf
+├── terraform.tfvars
+├── README.md
 ├── modules/
-│   ├── s3-backend/
-│   ├── vpc/
-│   ├── ecr/
-│   ├── eks/
-│   ├── rds/
-│   │   ├── rds.tf
-│   │   ├── aurora.tf
-│   │   ├── shared.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── jenkins/
-│   └── argo_cd/
+│  ├── s3-backend/
+│  ├── vpc/
+│  ├── ecr/
+│  ├── eks/
+│  ├── rds/
+│  ├── jenkins/
+│  ├── argo_cd/
+│  └── monitoring/
 ├── charts/
-│   └── django-app/
-└── README.md
+│  └── django-app/
+└── Django/
+   ├── app/
+   ├── Dockerfile
+   ├── Jenkinsfile
+   ├── docker-compose.yaml
+   ├── manage.py
+   └── requirements.txt
 ```
 
-## Приклад використання модуля
 
-### Стандартна RDS
-```hcl
-module "rds" {
-  source                 = "./modules/rds"
-  name                   = "app-postgres"
-  use_aurora             = false
-  engine                 = "postgres"
-  engine_version         = "16.3"
-  parameter_group_family = "postgres16"
-  instance_class         = "db.t3.medium"
-  allocated_storage      = 20
-  storage_type           = "gp3"
-  multi_az               = false
+## Передумови
+Перед запуском переконайтесь, що встановлено:
+- Terraform >= 1.5
+- AWS CLI
+- kubectl
+- Helm
+- доступ до AWS акаунта з правами на EKS, ECR, IAM, RDS, VPC, S3, DynamoDB
 
-  database_name          = "appdb"
-  username               = "dbadmin"
-  password               = "ChangeMe123!"
-  port                   = 5432
+## Важливі змінні
+У `terraform.tfvars` або через environment variables задайте:
+- `aws_region`
+- `jenkins_admin_password`
+- `grafana_admin_password`
+- `gitops_repo_url`
+- `gitops_repo_branch`
+- `gitops_chart_path`
+- `db_name`
+- `db_username`
+- `db_password`
+- `db_port`
 
-  subnet_ids             = module.vpc.private_subnet_ids
-  vpc_id                 = module.vpc.vpc_id
-  allowed_cidr_blocks    = ["10.0.0.0/16"]
-}
+## Ініціалізація Terraform
+Оскільки `backend.tf` використовує S3 + DynamoDB для state, а ці ресурси також створюються Terraform, перший запуск потрібно робити у два етапи.
+
+### Перший запуск (bootstrap backend)
+```bash
+terraform init -backend=false
+terraform fmt -recursive
+terraform validate
+terraform apply -target=module.s3_backend
 ```
 
-### Aurora
-```hcl
-module "rds" {
-  source                 = "./modules/rds"
-  name                   = "app-aurora"
-  use_aurora             = true
-  engine                 = "aurora-postgresql"
-  engine_version         = "16.1"
-  parameter_group_family = "aurora-postgresql16"
-  instance_class         = "db.r6g.large"
-
-  database_name          = "appdb"
-  username               = "dbadmin"
-  password               = "ChangeMe123!"
-  port                   = 5432
-
-  subnet_ids             = module.vpc.private_subnet_ids
-  vpc_id                 = module.vpc.vpc_id
-  allowed_cidr_blocks    = ["10.0.0.0/16"]
-}
+### Після створення S3/DynamoDB
+```bash
+terraform init -reconfigure
 ```
 
-## Як змінити тип БД
-- `use_aurora = false` → створюється `aws_db_instance`
-- `use_aurora = true` → створюється `aws_rds_cluster` + `aws_rds_cluster_instance`
+## Розгортання інфраструктури
+```bash
+terraform apply
+```
 
-## Основні змінні
-- `name` — базова назва ресурсів
-- `use_aurora` — перемикач між RDS і Aurora
-- `engine` — тип рушія: `postgres`, `mysql`, `aurora-postgresql`, `aurora-mysql`
-- `engine_version` — версія рушія
-- `parameter_group_family` — family для parameter group
-- `instance_class` — клас інстансу
-- `multi_az` — Multi-AZ для стандартної RDS
-- `allocated_storage` — розмір сховища для стандартної RDS
-- `storage_type` — тип storage для стандартної RDS
-- `database_name` — назва бази
-- `username`, `password` — master credentials
-- `port` — порт бази
-- `subnet_ids` — приватні підмережі
-- `vpc_id` — ID VPC
-- `allowed_cidr_blocks` — доступ до БД
-- `max_connections`, `log_statement`, `work_mem` — параметри parameter group
-- `backup_retention_period` — retention для backup
-- `skip_final_snapshot` — чи пропускати фінальний snapshot
-- `deletion_protection` — захист від видалення
-- `apply_immediately` — застосувати зміни одразу
+Після завершення перевірте ресурси:
+```bash
+kubectl get all -n jenkins
+kubectl get all -n argocd
+kubectl get all -n monitoring
+```
 
-## Що створює модуль
-В обох режимах:
-- `aws_db_subnet_group`
-- `aws_security_group`
-- parameter group
+## Перевірка доступності сервісів
+### Jenkins
+```bash
+kubectl port-forward svc/jenkins 8080:8080 -n jenkins
+```
+Після цього Jenkins буде доступний на `http://localhost:8080`
 
-Для стандартної RDS:
-- `aws_db_instance`
+### Argo CD
+```bash
+kubectl port-forward svc/argocd-server 8081:443 -n argocd
+```
+Argo CD буде доступний на `https://localhost:8081`
 
-Для Aurora:
-- `aws_rds_cluster`
-- `aws_rds_cluster_instance` (writer)
+### Grafana
+```bash
+kubectl port-forward svc/grafana 3000:80 -n monitoring
+```
+Grafana буде доступна на `http://localhost:3000`
+
+## CI/CD flow
+1. Розробник пушить зміни в репозиторій Django-застосунку.
+2. Jenkins запускає pipeline з `Jenkinsfile`.
+3. Pipeline:
+   - виконує checkout коду;
+   - збирає Docker image через **Kaniko**;
+   - пушить образ у **Amazon ECR**;
+   - клонує GitOps repo;
+   - оновлює `charts/django-app/values.yaml` новим image tag;
+   - комітить і пушить зміни в `main`.
+4. **Argo CD** відстежує GitOps repository.
+5. Після push у Git Argo CD автоматично синхронізує Helm chart з EKS.
+6. **Prometheus** збирає метрики, **Grafana** показує дашборди.
+
+## Як перевірити Jenkins pipeline
+1. Відкрити Jenkins.
+2. Створити pipeline job, який використовує `Django/Jenkinsfile` як Pipeline Script from SCM.
+3. Переконатись, що build:
+   - успішно виконав Kaniko build;
+   - запушив образ в ECR;
+   - оновив GitOps repo.
+
+## Як перевірити результат в Argo CD
+1. Відкрити Argo CD UI.
+2. Перевірити application `django-app`.
+3. Статус має бути `Healthy` та `Synced`.
+4. Після нового Jenkins build tag в Helm values має оновитися автоматично.
+
+## Як перевірити моніторинг
+1. Відкрити Grafana.
+2. Перевірити стандартні dashboards:
+   - Kubernetes / Compute Resources / Cluster
+   - Kubernetes / Compute Resources / Namespace (Pods)
+   - Node Exporter Full
+3. Переконатись, що метрики з namespace `jenkins`, `argocd`, `monitoring` та застосунку доступні.
+
+## Порядок запуску після `terraform destroy`
+Після повного видалення інфраструктури видаляються також **S3 bucket** та **DynamoDB table** для Terraform state.
+Тому повторний запуск робиться у такому порядку:
+1. Знову створити backend ресурси (`s3-backend`), якщо вони видалені.
+2. Оновити або перевірити `backend.tf`.
+3. Запустити `terraform init`.
+4. Лише після цього виконати `terraform apply`.
+
+## Видалення ресурсів
+Після перевірки **обов'язково** видаліть ресурси, щоб уникнути зайвих витрат:
+```bash
+terraform destroy
+```
+
+## Примітки
+- У Jenkins потрібно створити credentials для AWS та GitHub/GitLab token.
+- Для реального продакшен-використання паролі не слід зберігати в plaintext у `tfvars`; краще використовувати AWS Secrets Manager або SSM Parameter Store.
+- `charts/django-app` містить HPA, ConfigMap, Service та Deployment.
+
+
+## Відповідність структурі
+- У корені є: `main.tf`, `backend.tf`, `outputs.tf`.
+- У `modules/` присутні: `s3-backend`, `vpc`, `ecr`, `eks`, `rds`, `jenkins`, `argo_cd`, `monitoring`.
+- У `modules/argo_cd/charts/` файли розміщено у вигляді `Chart.yaml`, `values.yaml`, `templates/application.yaml`, `templates/repository.yaml`.
+- У `charts/django-app/` присутні `deployment.yaml`, `service.yaml`, `configmap.yaml`, `hpa.yaml`, `Chart.yaml`, `values.yaml`.
+- У `Django/` присутні `app/`, `Dockerfile`, `Jenkinsfile`, `docker-compose.yaml`.
+
+
+## Фінальна перевірка
+Перед здачею рекомендовано виконати:
+```bash
+terraform fmt -recursive
+terraform validate
+helm lint charts/django-app
+```

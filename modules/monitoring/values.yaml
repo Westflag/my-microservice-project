@@ -1,0 +1,27 @@
+grafana:
+  fullnameOverride: grafana
+  adminUser: admin
+  service:
+    type: ClusterIP
+    port: 80
+  defaultDashboardsTimezone: browser
+  persistence:
+    enabled: false
+
+prometheus:
+  service:
+    type: ClusterIP
+  prometheusSpec:
+    retention: 7d
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  enabled: true
+  service:
+    type: ClusterIP
+
+kube-state-metrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true

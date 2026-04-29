@@ -72,10 +72,10 @@ module "rds" {
   storage_type           = "gp3"
   multi_az               = false
 
-  database_name          = "appdb"
-  username               = "dbadmin"
-  password               = "ChangeMe123!"
-  port                   = 5432
+  database_name          = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+  port                   = var.db_port
 
   subnet_ids             = module.vpc.private_subnet_ids
   vpc_id                 = module.vpc.vpc_id
@@ -84,4 +84,15 @@ module "rds" {
   max_connections        = "100"
   log_statement          = "all"
   work_mem               = "4096"
+}
+
+
+module "monitoring" {
+  source                 = "./modules/monitoring"
+  cluster_name           = module.eks.cluster_name
+  cluster_endpoint       = module.eks.cluster_endpoint
+  cluster_ca_certificate = module.eks.cluster_ca_certificate
+  grafana_admin_password = var.grafana_admin_password
+
+  depends_on = [module.eks]
 }

@@ -29,3 +29,16 @@ output "rds_parameter_group_name" {
   description = "Database parameter group name"
   value       = module.rds.parameter_group_name
 }
+
+
+output "monitoring_namespace" {
+  value = module.monitoring.namespace
+}
+
+output "grafana_service_name" {
+  value = module.monitoring.grafana_service_name
+}
+
+output "prometheus_service_name" {
+  value = module.monitoring.prometheus_service_name
+}

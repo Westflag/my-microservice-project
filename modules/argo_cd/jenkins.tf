@@ -19,7 +19,7 @@ resource "helm_release" "argo_cd" {
 
 resource "helm_release" "argo_apps" {
   name      = "argo-apps"
-  chart     = "${path.module}/charts/argo-apps"
+  chart     = "${path.module}/charts"
   namespace = kubernetes_namespace.argocd.metadata[0].name
 
   values = [

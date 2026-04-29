@@ -23,3 +23,32 @@ variable "gitops_chart_path" {
   type    = string
   default = "charts/django-app"
 }
+
+
+variable "grafana_admin_password" {
+  type      = string
+  sensitive = true
+  default   = "ChangeMeGrafana123!"
+}
+
+
+variable "db_name" {
+  type    = string
+  default = "appdb"
+}
+
+variable "db_username" {
+  type    = string
+  default = "dbadmin"
+}
+
+variable "db_password" {
+  type      = string
+  sensitive = true
+  default   = "ChangeMe123!"
+}
+
+variable "db_port" {
+  type    = number
+  default = 5432
+}

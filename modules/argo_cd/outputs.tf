@@ -3,5 +3,5 @@ output "namespace" {
 }
 
 output "server_service_name" {
-  value = "argo-cd-argocd-server"
+  value = "argocd-server"
 }
